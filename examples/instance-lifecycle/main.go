@@ -12,6 +12,13 @@ import (
 	atlas "github.com/fluidstackio/atlas-client-go/v1alpha1"
 	"github.com/google/uuid"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/securityprovider"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
+)
+
+var (
+	defaultTokenURL = "https://fluidstack.us.auth0.com/oauth/token"
+	defaultAudience = "https://api.fluidstack.io"
 )
 
 func main() {
@@ -43,10 +50,7 @@ func main() {
 }
 
 func newClient() *atlas.ClientWithResponses {
-	token := os.Getenv("ATLAS_API_TOKEN")
-	if token == "" {
-		log.Fatal("Missing required environment variable ATLAS_API_TOKEN")
-	}
+	token := getToken()
 
 	url := os.Getenv("ATLAS_REGION_URL")
 	if url == "" {
@@ -64,6 +68,35 @@ func newClient() *atlas.ClientWithResponses {
 	}
 
 	return client
+}
+
+func getToken() string {
+	clientID := os.Getenv("ATLAS_CLIENT_ID")
+	if clientID == "" {
+		log.Fatal("Missing required environment variable ATLAS_CLIENT_ID")
+	}
+
+	clientSecret := os.Getenv("ATLAS_CLIENT_SECRET")
+	if clientSecret == "" {
+		log.Fatal("Missing required environment variable ATLAS_CLIENT_SECRET")
+	}
+
+	config := &clientcredentials.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		TokenURL:     defaultTokenURL,
+		AuthStyle:    oauth2.AuthStyleInParams,
+		EndpointParams: map[string][]string{
+			"audience": {defaultAudience},
+		},
+	}
+
+	token, err := config.TokenSource(context.Background()).Token()
+	if err != nil {
+		log.Fatalf("failed to fetch token: %v", err)
+	}
+
+	return token.AccessToken
 }
 
 func createInstance(ctx context.Context, client *atlas.ClientWithResponses, projectID uuid.UUID, name, instanceType string) (*atlas.Instance, error) {
