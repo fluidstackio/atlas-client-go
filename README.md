@@ -7,3 +7,7 @@ This repository contains a Go client for interacting with the [Fluidstack Atlas]
 ```
 go get github.com/fluidstackio/atlas-client-go
 ```
+
+## Examples
+
+See the [examples/](./examples/) directory for examples using this client.
