@@ -1697,6 +1697,7 @@ type GetCapacityResponse struct {
 		Name string `json:"name"`
 	}
 	JSON500 *Error
+	JSON501 *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1720,6 +1721,7 @@ type GetFilesystemsResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]Filesystem
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1744,6 +1746,7 @@ type PostFilesystemsResponse struct {
 	JSON201      *Filesystem
 	JSON400      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1767,6 +1770,7 @@ type DeleteFilesystemsIdResponse struct {
 	HTTPResponse *http.Response
 	JSON404      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1791,6 +1795,7 @@ type GetFilesystemsIdResponse struct {
 	JSON200      *Filesystem
 	JSON404      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1814,6 +1819,7 @@ type GetInstanceTypesResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]InstanceType
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1837,6 +1843,7 @@ type GetInstancesResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]Instance
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1861,6 +1868,7 @@ type PostInstancesResponse struct {
 	JSON201      *Instance
 	JSON400      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1884,6 +1892,7 @@ type DeleteInstancesIdResponse struct {
 	HTTPResponse *http.Response
 	JSON404      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1908,6 +1917,7 @@ type GetInstancesIdResponse struct {
 	JSON200      *Instance
 	JSON404      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1933,6 +1943,7 @@ type PostInstancesIdActionsStartResponse struct {
 	JSON404      *Error
 	JSON409      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1958,6 +1969,7 @@ type PostInstancesIdActionsStopResponse struct {
 	JSON404      *Error
 	JSON409      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1981,6 +1993,7 @@ type GetProjectsResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]Project
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -2005,6 +2018,7 @@ type PostProjectsResponse struct {
 	JSON201      *Project
 	JSON400      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -2028,6 +2042,7 @@ type DeleteProjectsIdResponse struct {
 	HTTPResponse *http.Response
 	JSON404      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -2052,6 +2067,7 @@ type GetProjectsIdResponse struct {
 	JSON200      *Project
 	JSON404      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -2077,6 +2093,7 @@ type PutProjectsIdResponse struct {
 	JSON400      *Error
 	JSON404      *Error
 	JSON500      *Error
+	JSON501      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -2314,6 +2331,13 @@ func ParseGetCapacityResponse(rsp *http.Response) (*GetCapacityResponse, error) 
 		}
 		response.JSON500 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
 	}
 
 	return response, nil
@@ -2346,6 +2370,13 @@ func ParseGetFilesystemsResponse(rsp *http.Response) (*GetFilesystemsResponse, e
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
@@ -2387,6 +2418,13 @@ func ParsePostFilesystemsResponse(rsp *http.Response) (*PostFilesystemsResponse,
 		}
 		response.JSON500 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
 	}
 
 	return response, nil
@@ -2419,6 +2457,13 @@ func ParseDeleteFilesystemsIdResponse(rsp *http.Response) (*DeleteFilesystemsIdR
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
@@ -2460,6 +2505,13 @@ func ParseGetFilesystemsIdResponse(rsp *http.Response) (*GetFilesystemsIdRespons
 		}
 		response.JSON500 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
 	}
 
 	return response, nil
@@ -2493,6 +2545,13 @@ func ParseGetInstanceTypesResponse(rsp *http.Response) (*GetInstanceTypesRespons
 		}
 		response.JSON500 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
 	}
 
 	return response, nil
@@ -2525,6 +2584,13 @@ func ParseGetInstancesResponse(rsp *http.Response) (*GetInstancesResponse, error
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
@@ -2566,6 +2632,13 @@ func ParsePostInstancesResponse(rsp *http.Response) (*PostInstancesResponse, err
 		}
 		response.JSON500 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
 	}
 
 	return response, nil
@@ -2598,6 +2671,13 @@ func ParseDeleteInstancesIdResponse(rsp *http.Response) (*DeleteInstancesIdRespo
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
@@ -2638,6 +2718,13 @@ func ParseGetInstancesIdResponse(rsp *http.Response) (*GetInstancesIdResponse, e
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
@@ -2686,6 +2773,13 @@ func ParsePostInstancesIdActionsStartResponse(rsp *http.Response) (*PostInstance
 		}
 		response.JSON500 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
 	}
 
 	return response, nil
@@ -2733,6 +2827,13 @@ func ParsePostInstancesIdActionsStopResponse(rsp *http.Response) (*PostInstances
 		}
 		response.JSON500 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
 	}
 
 	return response, nil
@@ -2765,6 +2866,13 @@ func ParseGetProjectsResponse(rsp *http.Response) (*GetProjectsResponse, error) 
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
@@ -2806,6 +2914,13 @@ func ParsePostProjectsResponse(rsp *http.Response) (*PostProjectsResponse, error
 		}
 		response.JSON500 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
 	}
 
 	return response, nil
@@ -2838,6 +2953,13 @@ func ParseDeleteProjectsIdResponse(rsp *http.Response) (*DeleteProjectsIdRespons
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
@@ -2878,6 +3000,13 @@ func ParseGetProjectsIdResponse(rsp *http.Response) (*GetProjectsIdResponse, err
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
@@ -2925,6 +3054,13 @@ func ParsePutProjectsIdResponse(rsp *http.Response) (*PutProjectsIdResponse, err
 			return nil, err
 		}
 		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
 
 	}
 
