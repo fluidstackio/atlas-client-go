@@ -22,7 +22,13 @@ var (
 )
 
 func main() {
-	client := newClient()
+	log.Printf("Begin Atlas instance lifecycle example")
+	defer log.Printf("End Atlas instance lifecycle example")
+
+	client, err := newClient()
+	if err != nil {
+		log.Fatalf("Failed to initialize client: %v", err)
+	}
 
 	if os.Getenv("ATLAS_PROJECT_ID") == "" {
 		log.Fatal("Missing required environment variable ATLAS_PROJECT_ID")
@@ -45,36 +51,39 @@ func main() {
 	}
 }
 
-func newClient() *atlas.ClientWithResponses {
-	token := getToken()
+func newClient() (*atlas.ClientWithResponses, error) {
+	token, err := getToken()
+	if err != nil {
+		return nil, err
+	}
 
 	url := os.Getenv("ATLAS_REGION_URL")
 	if url == "" {
-		log.Fatal("Missing required environment variable ATLAS_REGION_URL")
+		return nil, errors.New("missing required environment variable ATLAS_REGION_URL")
 	}
 
 	bearerAuth, err := securityprovider.NewSecurityProviderBearerToken(token)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	client, err := atlas.NewClientWithResponses(url+"/api/v1alpha1/", atlas.WithRequestEditorFn(bearerAuth.Intercept))
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return client
+	return client, nil
 }
 
-func getToken() string {
+func getToken() (string, error) {
 	clientID := os.Getenv("ATLAS_CLIENT_ID")
 	if clientID == "" {
-		log.Fatal("Missing required environment variable ATLAS_CLIENT_ID")
+		return "", errors.New("missing required environment variable ATLAS_CLIENT_ID")
 	}
 
 	clientSecret := os.Getenv("ATLAS_CLIENT_SECRET")
 	if clientSecret == "" {
-		log.Fatal("Missing required environment variable ATLAS_CLIENT_SECRET")
+		return "", errors.New("missing required environment variable ATLAS_CLIENT_SECRET")
 	}
 
 	config := &clientcredentials.Config{
@@ -89,10 +98,10 @@ func getToken() string {
 
 	token, err := config.TokenSource(context.Background()).Token()
 	if err != nil {
-		log.Fatalf("failed to fetch token: %v", err)
+		return "", err
 	}
 
-	return token.AccessToken
+	return token.AccessToken, nil
 }
 
 func createInstance(ctx context.Context, client *atlas.ClientWithResponses, projectID uuid.UUID, name, instanceType string) (*atlas.Instance, error) {
@@ -208,7 +217,7 @@ func deleteInstance(ctx context.Context, client *atlas.ClientWithResponses, proj
 		XPROJECTID: projectID,
 	})
 	if errGet != nil {
-		log.Fatal(errDelete)
+		return errGet
 	}
 
 	for respGet.StatusCode() != http.StatusNotFound {
