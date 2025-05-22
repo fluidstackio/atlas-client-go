@@ -62,6 +62,9 @@ type FilesystemsPostRequest struct {
 
 // Instance machine instance
 type Instance struct {
+	// Ephemeral Whether the instance is ephemeral
+	Ephemeral bool `json:"ephemeral"`
+
 	// Filesystems List of filesystem UUIDs attached to the instance
 	Filesystems []openapi_types.UUID `json:"filesystems"`
 
@@ -104,6 +107,9 @@ type InstanceType struct {
 
 // InstancesPostRequest POST request for a machine instance
 type InstancesPostRequest struct {
+	// Ephemeral Whether the instance is ephemeral
+	Ephemeral *bool `json:"ephemeral,omitempty"`
+
 	// Filesystems List of filesystem UUIDs attached to the instance
 	Filesystems *[]openapi_types.UUID `json:"filesystems,omitempty"`
 
@@ -135,6 +141,15 @@ type Project struct {
 // ProjectsPostRequest POST request for a project
 type ProjectsPostRequest struct {
 	// Name Name of the project
+	Name string `json:"name"`
+}
+
+// SlurmCluster Slurm Cluster
+type SlurmCluster struct {
+	// Id Unique identifier of the slurm cluster
+	Id openapi_types.UUID `json:"id"`
+
+	// Name Name of the slurm cluster
 	Name string `json:"name"`
 }
 
@@ -271,6 +286,15 @@ type GetProjectsIdParams struct {
 type PutProjectsIdParams struct {
 	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
 	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
+}
+
+// GetSlurmClustersParams defines parameters for GetSlurmClusters.
+type GetSlurmClustersParams struct {
+	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
+	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
+
+	// XPROJECTID Project identifier passed as a header
+	XPROJECTID XPROJECTID `json:"X-PROJECT-ID"`
 }
 
 // PostFilesystemsJSONRequestBody defines body for PostFilesystems for application/json ContentType.
@@ -416,6 +440,9 @@ type ClientInterface interface {
 	PutProjectsIdWithBody(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PutProjectsId(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, body PutProjectsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSlurmClusters request
+	GetSlurmClusters(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetCapacity(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -660,6 +687,18 @@ func (c *Client) PutProjectsIdWithBody(ctx context.Context, id openapi_types.UUI
 
 func (c *Client) PutProjectsId(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, body PutProjectsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutProjectsIdRequest(c.Server, id, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSlurmClusters(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSlurmClustersRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1583,6 +1622,57 @@ func NewPutProjectsIdRequestWithBody(server string, id openapi_types.UUID, param
 	return req, nil
 }
 
+// NewGetSlurmClustersRequest generates requests for GetSlurmClusters
+func NewGetSlurmClustersRequest(server string, params *GetSlurmClustersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm-clusters")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XORGID != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-ORG-ID", runtime.ParamLocationHeader, *params.XORGID)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-ORG-ID", headerParam0)
+		}
+
+		var headerParam1 string
+
+		headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-PROJECT-ID", runtime.ParamLocationHeader, params.XPROJECTID)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-PROJECT-ID", headerParam1)
+
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -1684,6 +1774,9 @@ type ClientWithResponsesInterface interface {
 	PutProjectsIdWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutProjectsIdResponse, error)
 
 	PutProjectsIdWithResponse(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, body PutProjectsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutProjectsIdResponse, error)
+
+	// GetSlurmClustersWithResponse request
+	GetSlurmClustersWithResponse(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersResponse, error)
 }
 
 type GetCapacityResponse struct {
@@ -2112,6 +2205,30 @@ func (r PutProjectsIdResponse) StatusCode() int {
 	return 0
 }
 
+type GetSlurmClustersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]SlurmCluster
+	JSON500      *Error
+	JSON501      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSlurmClustersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSlurmClustersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // GetCapacityWithResponse request returning *GetCapacityResponse
 func (c *ClientWithResponses) GetCapacityWithResponse(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*GetCapacityResponse, error) {
 	rsp, err := c.GetCapacity(ctx, params, reqEditors...)
@@ -2295,6 +2412,15 @@ func (c *ClientWithResponses) PutProjectsIdWithResponse(ctx context.Context, id 
 		return nil, err
 	}
 	return ParsePutProjectsIdResponse(rsp)
+}
+
+// GetSlurmClustersWithResponse request returning *GetSlurmClustersResponse
+func (c *ClientWithResponses) GetSlurmClustersWithResponse(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersResponse, error) {
+	rsp, err := c.GetSlurmClusters(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSlurmClustersResponse(rsp)
 }
 
 // ParseGetCapacityResponse parses an HTTP response from a GetCapacityWithResponse call
@@ -3047,6 +3173,46 @@ func ParsePutProjectsIdResponse(rsp *http.Response) (*PutProjectsIdResponse, err
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSlurmClustersResponse parses an HTTP response from a GetSlurmClustersWithResponse call
+func ParseGetSlurmClustersResponse(rsp *http.Response) (*GetSlurmClustersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSlurmClustersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []SlurmCluster
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Error
