@@ -40,10 +40,6 @@ func main() {
 		log.Fatalf("Failed to stop instance: %v", err)
 	}
 
-	if err := startInstance(ctx, client, projectID, instance.Id); err != nil {
-		log.Fatalf("Failed to start instance: %v", err)
-	}
-
 	if err := deleteInstance(ctx, client, projectID, instance.Id); err != nil {
 		log.Fatalf("Failed to delete instance: %v", err)
 	}
@@ -102,11 +98,13 @@ func getToken() string {
 func createInstance(ctx context.Context, client *atlas.ClientWithResponses, projectID uuid.UUID, name, instanceType string) (*atlas.Instance, error) {
 	log.Printf("Creating instance")
 
+	ephemeral := true
 	resp, err := client.PostInstancesWithResponse(ctx, &atlas.PostInstancesParams{
 		XPROJECTID: projectID,
 	}, atlas.InstancesPostRequest{
-		Name: name,
-		Type: instanceType,
+		Name:      name,
+		Type:      instanceType,
+		Ephemeral: &ephemeral,
 	})
 	if err != nil {
 		return nil, err
@@ -121,7 +119,7 @@ func createInstance(ctx context.Context, client *atlas.ClientWithResponses, proj
 
 	for instance.State != atlas.InstanceStateRunning {
 		log.Printf("Waiting for instance %v to start. Current state: %v", instance.Id, strings.ToUpper(string(instance.State)))
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		resp, err := client.GetInstancesIdWithResponse(ctx, resp.JSON201.Id, &atlas.GetInstancesIdParams{
 			XPROJECTID: projectID,
@@ -134,6 +132,14 @@ func createInstance(ctx context.Context, client *atlas.ClientWithResponses, proj
 		}
 
 		instance = resp.JSON200
+
+		if instance.State == atlas.InstanceStateOutOfStock {
+			if err := deleteInstance(ctx, client, projectID, instance.Id); err != nil {
+				log.Printf("Failed to delete instance: %v", err)
+			}
+
+			return nil, errors.New("instance type out of stock")
+		}
 	}
 
 	log.Printf("Started instance %v", instance.Id)
@@ -182,52 +188,6 @@ func stopInstance(ctx context.Context, client *atlas.ClientWithResponses, projec
 	}
 
 	log.Printf("Stopped instance %v", instanceID)
-	return nil
-}
-
-func startInstance(ctx context.Context, client *atlas.ClientWithResponses, projectID, instanceID uuid.UUID) error {
-	log.Printf("Starting instance %v", instanceID)
-
-	startResp, err := client.PostInstancesIdActionsStartWithResponse(ctx, instanceID, &atlas.PostInstancesIdActionsStartParams{
-		XPROJECTID: projectID,
-	})
-	if err != nil {
-		return err
-	}
-	if startResp.StatusCode() != http.StatusAccepted {
-		log.Printf("here")
-		return errors.New(startResp.Status())
-	}
-
-	resp, err := client.GetInstancesIdWithResponse(ctx, instanceID, &atlas.GetInstancesIdParams{
-		XPROJECTID: projectID,
-	})
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode() != http.StatusOK {
-		return errors.New(resp.Status())
-	}
-
-	instance := resp.JSON200
-	for instance.State != atlas.InstanceStateRunning {
-		log.Printf("Waiting for instance %v to start. Current state: %v", instance.Id, strings.ToUpper(string(instance.State)))
-		time.Sleep(5 * time.Second)
-
-		resp, err := client.GetInstancesIdWithResponse(ctx, instanceID, &atlas.GetInstancesIdParams{
-			XPROJECTID: projectID,
-		})
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode() != http.StatusOK {
-			return errors.New(resp.Status())
-		}
-
-		instance = resp.JSON200
-	}
-
-	log.Printf("Started instance %v", instanceID)
 	return nil
 }
 
