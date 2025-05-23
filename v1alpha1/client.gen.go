@@ -71,7 +71,7 @@ type Instance struct {
 	// Id Unique identifier of the instance
 	Id openapi_types.UUID `json:"id"`
 
-	// Image Image URL for the instance
+	// Image Operating system image for the instance
 	Image string `json:"image"`
 
 	// Name Name of the instance
@@ -113,7 +113,7 @@ type InstancesPostRequest struct {
 	// Filesystems List of filesystem UUIDs attached to the instance
 	Filesystems *[]openapi_types.UUID `json:"filesystems,omitempty"`
 
-	// Image Image URL for the instance
+	// Image Operating system image for the instance
 	Image *string `json:"image,omitempty"`
 
 	// Name Name of the instance
@@ -282,12 +282,6 @@ type GetProjectsIdParams struct {
 	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
 }
 
-// PutProjectsIdParams defines parameters for PutProjectsId.
-type PutProjectsIdParams struct {
-	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
-	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
-}
-
 // GetSlurmClustersParams defines parameters for GetSlurmClusters.
 type GetSlurmClustersParams struct {
 	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
@@ -305,9 +299,6 @@ type PostInstancesJSONRequestBody = InstancesPostRequest
 
 // PostProjectsJSONRequestBody defines body for PostProjects for application/json ContentType.
 type PostProjectsJSONRequestBody = ProjectsPostRequest
-
-// PutProjectsIdJSONRequestBody defines body for PutProjectsId for application/json ContentType.
-type PutProjectsIdJSONRequestBody = Project
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -435,11 +426,6 @@ type ClientInterface interface {
 
 	// GetProjectsId request
 	GetProjectsId(ctx context.Context, id openapi_types.UUID, params *GetProjectsIdParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// PutProjectsIdWithBody request with any body
-	PutProjectsIdWithBody(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	PutProjectsId(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, body PutProjectsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSlurmClusters request
 	GetSlurmClusters(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -663,30 +649,6 @@ func (c *Client) DeleteProjectsId(ctx context.Context, id openapi_types.UUID, pa
 
 func (c *Client) GetProjectsId(ctx context.Context, id openapi_types.UUID, params *GetProjectsIdParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetProjectsIdRequest(c.Server, id, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PutProjectsIdWithBody(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutProjectsIdRequestWithBody(c.Server, id, params, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) PutProjectsId(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, body PutProjectsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPutProjectsIdRequest(c.Server, id, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1560,68 +1522,6 @@ func NewGetProjectsIdRequest(server string, id openapi_types.UUID, params *GetPr
 	return req, nil
 }
 
-// NewPutProjectsIdRequest calls the generic PutProjectsId builder with application/json body
-func NewPutProjectsIdRequest(server string, id openapi_types.UUID, params *PutProjectsIdParams, body PutProjectsIdJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewPutProjectsIdRequestWithBody(server, id, params, "application/json", bodyReader)
-}
-
-// NewPutProjectsIdRequestWithBody generates requests for PutProjectsId with any type of body
-func NewPutProjectsIdRequestWithBody(server string, id openapi_types.UUID, params *PutProjectsIdParams, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/projects/%s", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("PUT", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	if params != nil {
-
-		if params.XORGID != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-ORG-ID", runtime.ParamLocationHeader, *params.XORGID)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("X-ORG-ID", headerParam0)
-		}
-
-	}
-
-	return req, nil
-}
-
 // NewGetSlurmClustersRequest generates requests for GetSlurmClusters
 func NewGetSlurmClustersRequest(server string, params *GetSlurmClustersParams) (*http.Request, error) {
 	var err error
@@ -1769,11 +1669,6 @@ type ClientWithResponsesInterface interface {
 
 	// GetProjectsIdWithResponse request
 	GetProjectsIdWithResponse(ctx context.Context, id openapi_types.UUID, params *GetProjectsIdParams, reqEditors ...RequestEditorFn) (*GetProjectsIdResponse, error)
-
-	// PutProjectsIdWithBodyWithResponse request with any body
-	PutProjectsIdWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutProjectsIdResponse, error)
-
-	PutProjectsIdWithResponse(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, body PutProjectsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutProjectsIdResponse, error)
 
 	// GetSlurmClustersWithResponse request
 	GetSlurmClustersWithResponse(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersResponse, error)
@@ -2179,32 +2074,6 @@ func (r GetProjectsIdResponse) StatusCode() int {
 	return 0
 }
 
-type PutProjectsIdResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *Project
-	JSON400      *Error
-	JSON404      *Error
-	JSON500      *Error
-	JSON501      *Error
-}
-
-// Status returns HTTPResponse.Status
-func (r PutProjectsIdResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r PutProjectsIdResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type GetSlurmClustersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2395,23 +2264,6 @@ func (c *ClientWithResponses) GetProjectsIdWithResponse(ctx context.Context, id 
 		return nil, err
 	}
 	return ParseGetProjectsIdResponse(rsp)
-}
-
-// PutProjectsIdWithBodyWithResponse request with arbitrary body returning *PutProjectsIdResponse
-func (c *ClientWithResponses) PutProjectsIdWithBodyWithResponse(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutProjectsIdResponse, error) {
-	rsp, err := c.PutProjectsIdWithBody(ctx, id, params, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePutProjectsIdResponse(rsp)
-}
-
-func (c *ClientWithResponses) PutProjectsIdWithResponse(ctx context.Context, id openapi_types.UUID, params *PutProjectsIdParams, body PutProjectsIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PutProjectsIdResponse, error) {
-	rsp, err := c.PutProjectsId(ctx, id, params, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParsePutProjectsIdResponse(rsp)
 }
 
 // GetSlurmClustersWithResponse request returning *GetSlurmClustersResponse
@@ -3112,60 +2964,6 @@ func ParseGetProjectsIdResponse(rsp *http.Response) (*GetProjectsIdResponse, err
 			return nil, err
 		}
 		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON501 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParsePutProjectsIdResponse parses an HTTP response from a PutProjectsIdWithResponse call
-func ParsePutProjectsIdResponse(rsp *http.Response) (*PutProjectsIdResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &PutProjectsIdResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Project
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest Error
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
