@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	defaultTokenURL = "https://fluidstack.us.auth0.com/oauth/token"
+	defaultTokenURL = "https://oauth.fluidstack.io/oauth/token"
 	defaultAudience = "https://api.fluidstack.io"
 )
 
