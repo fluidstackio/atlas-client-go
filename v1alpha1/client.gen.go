@@ -83,6 +83,9 @@ type Instance struct {
 	// State Possible states of a machine instance
 	State InstanceState `json:"state"`
 
+	// Tags Tags for the instance
+	Tags map[string]string `json:"tags"`
+
 	// Type Instance type
 	Type string `json:"type"`
 
@@ -97,6 +100,12 @@ type InstanceState string
 type InstanceType struct {
 	// Cpu Number of CPUs the instance type has
 	Cpu int `json:"cpu"`
+
+	// GpuCount Number of GPUs the instance type has
+	GpuCount *int `json:"gpu_count,omitempty"`
+
+	// GpuModel GPU model the instance type has
+	GpuModel *string `json:"gpu_model,omitempty"`
 
 	// Memory Amount of memory the instance type has
 	Memory string `json:"memory"`
@@ -122,6 +131,9 @@ type InstancesPostRequest struct {
 	// Preemptible Whether the instance is preemptible
 	Preemptible *bool `json:"preemptible,omitempty"`
 
+	// Tags Tags for the instance
+	Tags *map[string]string `json:"tags,omitempty"`
+
 	// Type Instance type
 	Type string `json:"type"`
 
@@ -136,12 +148,18 @@ type Project struct {
 
 	// Name Name of the project
 	Name string `json:"name"`
+
+	// Tags Tags for the project
+	Tags map[string]string `json:"tags"`
 }
 
 // ProjectsPostRequest POST request for a project
 type ProjectsPostRequest struct {
 	// Name Name of the project
 	Name string `json:"name"`
+
+	// Tags Tags for the project
+	Tags *map[string]string `json:"tags,omitempty"`
 }
 
 // SlurmCluster Slurm Cluster
@@ -151,6 +169,18 @@ type SlurmCluster struct {
 
 	// Name Name of the slurm cluster
 	Name string `json:"name"`
+}
+
+// SlurmNodePool Slurm Node Pool
+type SlurmNodePool struct {
+	// Id Unique identifier of the slurm node pool
+	Id openapi_types.UUID `json:"id"`
+
+	// Name Name of the slurm node pool
+	Name string `json:"name"`
+
+	// Type Instance type of the slurm node pool
+	Type string `json:"type"`
 }
 
 // XORGID defines model for X-ORG-ID.
@@ -284,6 +314,15 @@ type GetProjectsIdParams struct {
 
 // GetSlurmClustersParams defines parameters for GetSlurmClusters.
 type GetSlurmClustersParams struct {
+	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
+	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
+
+	// XPROJECTID Project identifier passed as a header
+	XPROJECTID XPROJECTID `json:"X-PROJECT-ID"`
+}
+
+// GetSlurmClustersIdNodePoolsParams defines parameters for GetSlurmClustersIdNodePools.
+type GetSlurmClustersIdNodePoolsParams struct {
 	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
 	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
 
@@ -429,6 +468,9 @@ type ClientInterface interface {
 
 	// GetSlurmClusters request
 	GetSlurmClusters(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSlurmClustersIdNodePools request
+	GetSlurmClustersIdNodePools(ctx context.Context, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetCapacity(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -661,6 +703,18 @@ func (c *Client) GetProjectsId(ctx context.Context, id openapi_types.UUID, param
 
 func (c *Client) GetSlurmClusters(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSlurmClustersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSlurmClustersIdNodePools(ctx context.Context, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSlurmClustersIdNodePoolsRequest(c.Server, id, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1573,6 +1627,64 @@ func NewGetSlurmClustersRequest(server string, params *GetSlurmClustersParams) (
 	return req, nil
 }
 
+// NewGetSlurmClustersIdNodePoolsRequest generates requests for GetSlurmClustersIdNodePools
+func NewGetSlurmClustersIdNodePoolsRequest(server string, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/slurm-clusters/%s/node-pools", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XORGID != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-ORG-ID", runtime.ParamLocationHeader, *params.XORGID)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-ORG-ID", headerParam0)
+		}
+
+		var headerParam1 string
+
+		headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-PROJECT-ID", runtime.ParamLocationHeader, params.XPROJECTID)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-PROJECT-ID", headerParam1)
+
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -1672,6 +1784,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetSlurmClustersWithResponse request
 	GetSlurmClustersWithResponse(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersResponse, error)
+
+	// GetSlurmClustersIdNodePoolsWithResponse request
+	GetSlurmClustersIdNodePoolsWithResponse(ctx context.Context, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersIdNodePoolsResponse, error)
 }
 
 type GetCapacityResponse struct {
@@ -2098,6 +2213,31 @@ func (r GetSlurmClustersResponse) StatusCode() int {
 	return 0
 }
 
+type GetSlurmClustersIdNodePoolsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]SlurmNodePool
+	JSON404      *Error
+	JSON500      *Error
+	JSON501      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSlurmClustersIdNodePoolsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSlurmClustersIdNodePoolsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // GetCapacityWithResponse request returning *GetCapacityResponse
 func (c *ClientWithResponses) GetCapacityWithResponse(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*GetCapacityResponse, error) {
 	rsp, err := c.GetCapacity(ctx, params, reqEditors...)
@@ -2273,6 +2413,15 @@ func (c *ClientWithResponses) GetSlurmClustersWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseGetSlurmClustersResponse(rsp)
+}
+
+// GetSlurmClustersIdNodePoolsWithResponse request returning *GetSlurmClustersIdNodePoolsResponse
+func (c *ClientWithResponses) GetSlurmClustersIdNodePoolsWithResponse(ctx context.Context, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersIdNodePoolsResponse, error) {
+	rsp, err := c.GetSlurmClustersIdNodePools(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSlurmClustersIdNodePoolsResponse(rsp)
 }
 
 // ParseGetCapacityResponse parses an HTTP response from a GetCapacityWithResponse call
@@ -3011,6 +3160,53 @@ func ParseGetSlurmClustersResponse(rsp *http.Response) (*GetSlurmClustersRespons
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSlurmClustersIdNodePoolsResponse parses an HTTP response from a GetSlurmClustersIdNodePoolsWithResponse call
+func ParseGetSlurmClustersIdNodePoolsResponse(rsp *http.Response) (*GetSlurmClustersIdNodePoolsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSlurmClustersIdNodePoolsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []SlurmNodePool
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Error
