@@ -74,6 +74,9 @@ type Instance struct {
 	// Image Operating system image for the instance
 	Image string `json:"image"`
 
+	// Ip Private IP address of the instance
+	Ip string `json:"ip"`
+
 	// Name Name of the instance
 	Name string `json:"name"`
 
