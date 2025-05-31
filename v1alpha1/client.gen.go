@@ -144,6 +144,27 @@ type InstancesPostRequest struct {
 	UserData *[]byte `json:"userData"`
 }
 
+// KubernetesCluster Kubernetes Cluster
+type KubernetesCluster struct {
+	// Id Unique identifier of the kubernetes cluster
+	Id openapi_types.UUID `json:"id"`
+
+	// Name Name of the kubernetes cluster
+	Name string `json:"name"`
+}
+
+// KubernetesNodePool Kubernetes Node Pool
+type KubernetesNodePool struct {
+	// Id Unique identifier of the kubernetes node pool
+	Id openapi_types.UUID `json:"id"`
+
+	// Name Name of the kubernetes node pool
+	Name string `json:"name"`
+
+	// Type Instance type of the kubernetes node pool
+	Type string `json:"type"`
+}
+
 // Project Project information
 type Project struct {
 	// Id Unique identifier of the project
@@ -291,6 +312,24 @@ type PostInstancesIdActionsStopParams struct {
 	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
 }
 
+// GetKubernetesClustersParams defines parameters for GetKubernetesClusters.
+type GetKubernetesClustersParams struct {
+	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
+	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
+
+	// XPROJECTID Project identifier passed as a header
+	XPROJECTID XPROJECTID `json:"X-PROJECT-ID"`
+}
+
+// GetKubernetesNodePoolsParams defines parameters for GetKubernetesNodePools.
+type GetKubernetesNodePoolsParams struct {
+	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
+	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
+
+	// XPROJECTID Project identifier passed as a header
+	XPROJECTID XPROJECTID `json:"X-PROJECT-ID"`
+}
+
 // GetProjectsParams defines parameters for GetProjects.
 type GetProjectsParams struct {
 	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
@@ -324,8 +363,8 @@ type GetSlurmClustersParams struct {
 	XPROJECTID XPROJECTID `json:"X-PROJECT-ID"`
 }
 
-// GetSlurmClustersIdNodePoolsParams defines parameters for GetSlurmClustersIdNodePools.
-type GetSlurmClustersIdNodePoolsParams struct {
+// GetSlurmNodePoolsParams defines parameters for GetSlurmNodePools.
+type GetSlurmNodePoolsParams struct {
 	// XORGID Organization identifier passed as a header. This is optional and can normally inferred by the bearer token used for authentication.
 	XORGID *XORGID `json:"X-ORG-ID,omitempty"`
 
@@ -455,6 +494,12 @@ type ClientInterface interface {
 	// PostInstancesIdActionsStop request
 	PostInstancesIdActionsStop(ctx context.Context, id openapi_types.UUID, params *PostInstancesIdActionsStopParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetKubernetesClusters request
+	GetKubernetesClusters(ctx context.Context, params *GetKubernetesClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetKubernetesNodePools request
+	GetKubernetesNodePools(ctx context.Context, params *GetKubernetesNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetProjects request
 	GetProjects(ctx context.Context, params *GetProjectsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -472,8 +517,8 @@ type ClientInterface interface {
 	// GetSlurmClusters request
 	GetSlurmClusters(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetSlurmClustersIdNodePools request
-	GetSlurmClustersIdNodePools(ctx context.Context, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetSlurmNodePools request
+	GetSlurmNodePools(ctx context.Context, params *GetSlurmNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) GetCapacity(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -644,6 +689,30 @@ func (c *Client) PostInstancesIdActionsStop(ctx context.Context, id openapi_type
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetKubernetesClusters(ctx context.Context, params *GetKubernetesClustersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetKubernetesClustersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetKubernetesNodePools(ctx context.Context, params *GetKubernetesNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetKubernetesNodePoolsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetProjects(ctx context.Context, params *GetProjectsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetProjectsRequest(c.Server, params)
 	if err != nil {
@@ -716,8 +785,8 @@ func (c *Client) GetSlurmClusters(ctx context.Context, params *GetSlurmClustersP
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetSlurmClustersIdNodePools(ctx context.Context, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSlurmClustersIdNodePoolsRequest(c.Server, id, params)
+func (c *Client) GetSlurmNodePools(ctx context.Context, params *GetSlurmNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSlurmNodePoolsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1384,6 +1453,108 @@ func NewPostInstancesIdActionsStopRequest(server string, id openapi_types.UUID, 
 	return req, nil
 }
 
+// NewGetKubernetesClustersRequest generates requests for GetKubernetesClusters
+func NewGetKubernetesClustersRequest(server string, params *GetKubernetesClustersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/kubernetes/clusters")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XORGID != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-ORG-ID", runtime.ParamLocationHeader, *params.XORGID)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-ORG-ID", headerParam0)
+		}
+
+		var headerParam1 string
+
+		headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-PROJECT-ID", runtime.ParamLocationHeader, params.XPROJECTID)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-PROJECT-ID", headerParam1)
+
+	}
+
+	return req, nil
+}
+
+// NewGetKubernetesNodePoolsRequest generates requests for GetKubernetesNodePools
+func NewGetKubernetesNodePoolsRequest(server string, params *GetKubernetesNodePoolsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/kubernetes/node-pools")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.XORGID != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-ORG-ID", runtime.ParamLocationHeader, *params.XORGID)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("X-ORG-ID", headerParam0)
+		}
+
+		var headerParam1 string
+
+		headerParam1, err = runtime.StyleParamWithLocation("simple", false, "X-PROJECT-ID", runtime.ParamLocationHeader, params.XPROJECTID)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-PROJECT-ID", headerParam1)
+
+	}
+
+	return req, nil
+}
+
 // NewGetProjectsRequest generates requests for GetProjects
 func NewGetProjectsRequest(server string, params *GetProjectsParams) (*http.Request, error) {
 	var err error
@@ -1588,7 +1759,7 @@ func NewGetSlurmClustersRequest(server string, params *GetSlurmClustersParams) (
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/slurm-clusters")
+	operationPath := fmt.Sprintf("/slurm/clusters")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1630,23 +1801,16 @@ func NewGetSlurmClustersRequest(server string, params *GetSlurmClustersParams) (
 	return req, nil
 }
 
-// NewGetSlurmClustersIdNodePoolsRequest generates requests for GetSlurmClustersIdNodePools
-func NewGetSlurmClustersIdNodePoolsRequest(server string, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams) (*http.Request, error) {
+// NewGetSlurmNodePoolsRequest generates requests for GetSlurmNodePools
+func NewGetSlurmNodePoolsRequest(server string, params *GetSlurmNodePoolsParams) (*http.Request, error) {
 	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
-	if err != nil {
-		return nil, err
-	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/slurm-clusters/%s/node-pools", pathParam0)
+	operationPath := fmt.Sprintf("/slurm/node-pools")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1771,6 +1935,12 @@ type ClientWithResponsesInterface interface {
 	// PostInstancesIdActionsStopWithResponse request
 	PostInstancesIdActionsStopWithResponse(ctx context.Context, id openapi_types.UUID, params *PostInstancesIdActionsStopParams, reqEditors ...RequestEditorFn) (*PostInstancesIdActionsStopResponse, error)
 
+	// GetKubernetesClustersWithResponse request
+	GetKubernetesClustersWithResponse(ctx context.Context, params *GetKubernetesClustersParams, reqEditors ...RequestEditorFn) (*GetKubernetesClustersResponse, error)
+
+	// GetKubernetesNodePoolsWithResponse request
+	GetKubernetesNodePoolsWithResponse(ctx context.Context, params *GetKubernetesNodePoolsParams, reqEditors ...RequestEditorFn) (*GetKubernetesNodePoolsResponse, error)
+
 	// GetProjectsWithResponse request
 	GetProjectsWithResponse(ctx context.Context, params *GetProjectsParams, reqEditors ...RequestEditorFn) (*GetProjectsResponse, error)
 
@@ -1788,8 +1958,8 @@ type ClientWithResponsesInterface interface {
 	// GetSlurmClustersWithResponse request
 	GetSlurmClustersWithResponse(ctx context.Context, params *GetSlurmClustersParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersResponse, error)
 
-	// GetSlurmClustersIdNodePoolsWithResponse request
-	GetSlurmClustersIdNodePoolsWithResponse(ctx context.Context, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersIdNodePoolsResponse, error)
+	// GetSlurmNodePoolsWithResponse request
+	GetSlurmNodePoolsWithResponse(ctx context.Context, params *GetSlurmNodePoolsParams, reqEditors ...RequestEditorFn) (*GetSlurmNodePoolsResponse, error)
 }
 
 type GetCapacityResponse struct {
@@ -2094,6 +2264,55 @@ func (r PostInstancesIdActionsStopResponse) StatusCode() int {
 	return 0
 }
 
+type GetKubernetesClustersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]KubernetesCluster
+	JSON500      *Error
+	JSON501      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetKubernetesClustersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetKubernetesClustersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetKubernetesNodePoolsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]KubernetesNodePool
+	JSON404      *Error
+	JSON500      *Error
+	JSON501      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetKubernetesNodePoolsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetKubernetesNodePoolsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetProjectsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2216,7 +2435,7 @@ func (r GetSlurmClustersResponse) StatusCode() int {
 	return 0
 }
 
-type GetSlurmClustersIdNodePoolsResponse struct {
+type GetSlurmNodePoolsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]SlurmNodePool
@@ -2226,7 +2445,7 @@ type GetSlurmClustersIdNodePoolsResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetSlurmClustersIdNodePoolsResponse) Status() string {
+func (r GetSlurmNodePoolsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2234,7 +2453,7 @@ func (r GetSlurmClustersIdNodePoolsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetSlurmClustersIdNodePoolsResponse) StatusCode() int {
+func (r GetSlurmNodePoolsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2365,6 +2584,24 @@ func (c *ClientWithResponses) PostInstancesIdActionsStopWithResponse(ctx context
 	return ParsePostInstancesIdActionsStopResponse(rsp)
 }
 
+// GetKubernetesClustersWithResponse request returning *GetKubernetesClustersResponse
+func (c *ClientWithResponses) GetKubernetesClustersWithResponse(ctx context.Context, params *GetKubernetesClustersParams, reqEditors ...RequestEditorFn) (*GetKubernetesClustersResponse, error) {
+	rsp, err := c.GetKubernetesClusters(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetKubernetesClustersResponse(rsp)
+}
+
+// GetKubernetesNodePoolsWithResponse request returning *GetKubernetesNodePoolsResponse
+func (c *ClientWithResponses) GetKubernetesNodePoolsWithResponse(ctx context.Context, params *GetKubernetesNodePoolsParams, reqEditors ...RequestEditorFn) (*GetKubernetesNodePoolsResponse, error) {
+	rsp, err := c.GetKubernetesNodePools(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetKubernetesNodePoolsResponse(rsp)
+}
+
 // GetProjectsWithResponse request returning *GetProjectsResponse
 func (c *ClientWithResponses) GetProjectsWithResponse(ctx context.Context, params *GetProjectsParams, reqEditors ...RequestEditorFn) (*GetProjectsResponse, error) {
 	rsp, err := c.GetProjects(ctx, params, reqEditors...)
@@ -2418,13 +2655,13 @@ func (c *ClientWithResponses) GetSlurmClustersWithResponse(ctx context.Context, 
 	return ParseGetSlurmClustersResponse(rsp)
 }
 
-// GetSlurmClustersIdNodePoolsWithResponse request returning *GetSlurmClustersIdNodePoolsResponse
-func (c *ClientWithResponses) GetSlurmClustersIdNodePoolsWithResponse(ctx context.Context, id openapi_types.UUID, params *GetSlurmClustersIdNodePoolsParams, reqEditors ...RequestEditorFn) (*GetSlurmClustersIdNodePoolsResponse, error) {
-	rsp, err := c.GetSlurmClustersIdNodePools(ctx, id, params, reqEditors...)
+// GetSlurmNodePoolsWithResponse request returning *GetSlurmNodePoolsResponse
+func (c *ClientWithResponses) GetSlurmNodePoolsWithResponse(ctx context.Context, params *GetSlurmNodePoolsParams, reqEditors ...RequestEditorFn) (*GetSlurmNodePoolsResponse, error) {
+	rsp, err := c.GetSlurmNodePools(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetSlurmClustersIdNodePoolsResponse(rsp)
+	return ParseGetSlurmNodePoolsResponse(rsp)
 }
 
 // ParseGetCapacityResponse parses an HTTP response from a GetCapacityWithResponse call
@@ -2969,6 +3206,93 @@ func ParsePostInstancesIdActionsStopResponse(rsp *http.Response) (*PostInstances
 	return response, nil
 }
 
+// ParseGetKubernetesClustersResponse parses an HTTP response from a GetKubernetesClustersWithResponse call
+func ParseGetKubernetesClustersResponse(rsp *http.Response) (*GetKubernetesClustersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetKubernetesClustersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []KubernetesCluster
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetKubernetesNodePoolsResponse parses an HTTP response from a GetKubernetesNodePoolsWithResponse call
+func ParseGetKubernetesNodePoolsResponse(rsp *http.Response) (*GetKubernetesNodePoolsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetKubernetesNodePoolsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []KubernetesNodePool
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetProjectsResponse parses an HTTP response from a GetProjectsWithResponse call
 func ParseGetProjectsResponse(rsp *http.Response) (*GetProjectsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -3183,15 +3507,15 @@ func ParseGetSlurmClustersResponse(rsp *http.Response) (*GetSlurmClustersRespons
 	return response, nil
 }
 
-// ParseGetSlurmClustersIdNodePoolsResponse parses an HTTP response from a GetSlurmClustersIdNodePoolsWithResponse call
-func ParseGetSlurmClustersIdNodePoolsResponse(rsp *http.Response) (*GetSlurmClustersIdNodePoolsResponse, error) {
+// ParseGetSlurmNodePoolsResponse parses an HTTP response from a GetSlurmNodePoolsWithResponse call
+func ParseGetSlurmNodePoolsResponse(rsp *http.Response) (*GetSlurmNodePoolsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetSlurmClustersIdNodePoolsResponse{
+	response := &GetSlurmNodePoolsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
