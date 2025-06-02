@@ -33,6 +33,9 @@ const (
 	InstanceStateStopping   InstanceState = "stopping"
 )
 
+// Capabilities List of avaialable capabilities
+type Capabilities = []string
+
 // Error Error response
 type Error struct {
 	// Message Human-readable error message
@@ -75,7 +78,7 @@ type Instance struct {
 	Image string `json:"image"`
 
 	// Ip Private IP address of the instance
-	Ip string `json:"ip"`
+	Ip *string `json:"ip,omitempty"`
 
 	// Name Name of the instance
 	Name string `json:"name"`
@@ -454,6 +457,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// GetCapabilities request
+	GetCapabilities(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetCapacity request
 	GetCapacity(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -519,6 +525,18 @@ type ClientInterface interface {
 
 	// GetSlurmNodePools request
 	GetSlurmNodePools(ctx context.Context, params *GetSlurmNodePoolsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) GetCapabilities(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCapabilitiesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetCapacity(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -795,6 +813,33 @@ func (c *Client) GetSlurmNodePools(ctx context.Context, params *GetSlurmNodePool
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewGetCapabilitiesRequest generates requests for GetCapabilities
+func NewGetCapabilitiesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/capabilities")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetCapacityRequest generates requests for GetCapacity
@@ -1895,6 +1940,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// GetCapabilitiesWithResponse request
+	GetCapabilitiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCapabilitiesResponse, error)
+
 	// GetCapacityWithResponse request
 	GetCapacityWithResponse(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*GetCapacityResponse, error)
 
@@ -1960,6 +2008,30 @@ type ClientWithResponsesInterface interface {
 
 	// GetSlurmNodePoolsWithResponse request
 	GetSlurmNodePoolsWithResponse(ctx context.Context, params *GetSlurmNodePoolsParams, reqEditors ...RequestEditorFn) (*GetSlurmNodePoolsResponse, error)
+}
+
+type GetCapabilitiesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Capabilities
+	JSON500      *Error
+	JSON501      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCapabilitiesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCapabilitiesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetCapacityResponse struct {
@@ -2460,6 +2532,15 @@ func (r GetSlurmNodePoolsResponse) StatusCode() int {
 	return 0
 }
 
+// GetCapabilitiesWithResponse request returning *GetCapabilitiesResponse
+func (c *ClientWithResponses) GetCapabilitiesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetCapabilitiesResponse, error) {
+	rsp, err := c.GetCapabilities(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCapabilitiesResponse(rsp)
+}
+
 // GetCapacityWithResponse request returning *GetCapacityResponse
 func (c *ClientWithResponses) GetCapacityWithResponse(ctx context.Context, params *GetCapacityParams, reqEditors ...RequestEditorFn) (*GetCapacityResponse, error) {
 	rsp, err := c.GetCapacity(ctx, params, reqEditors...)
@@ -2662,6 +2743,46 @@ func (c *ClientWithResponses) GetSlurmNodePoolsWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseGetSlurmNodePoolsResponse(rsp)
+}
+
+// ParseGetCapabilitiesResponse parses an HTTP response from a GetCapabilitiesWithResponse call
+func ParseGetCapabilitiesResponse(rsp *http.Response) (*GetCapabilitiesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCapabilitiesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Capabilities
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 501:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON501 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetCapacityResponse parses an HTTP response from a GetCapacityWithResponse call
