@@ -78,7 +78,7 @@ type Instance struct {
 	Image string `json:"image"`
 
 	// Ip Private IP address of the instance
-	Ip *string `json:"ip,omitempty"`
+	Ip *string `json:"ip"`
 
 	// Name Name of the instance
 	Name string `json:"name"`
