@@ -33,6 +33,12 @@ const (
 	InstanceStateStopping   InstanceState = "stopping"
 )
 
+// Defines values for ProjectState.
+const (
+	ProjectStateActive   ProjectState = "active"
+	ProjectStateDeleting ProjectState = "deleting"
+)
+
 // Capabilities List of avaialable capabilities
 type Capabilities = []string
 
@@ -137,7 +143,7 @@ type InstancesPostRequest struct {
 	// Preemptible Whether the instance is preemptible
 	Preemptible *bool `json:"preemptible,omitempty"`
 
-	// Tags Tags for the instance
+	// Tags Tags for the instance. Tag keys must be 1–63 characters, start and end with alphanumerics, and may include `-`, `_`, and `.`.
 	Tags *map[string]string `json:"tags,omitempty"`
 
 	// Type Instance type
@@ -176,16 +182,22 @@ type Project struct {
 	// Name Name of the project
 	Name string `json:"name"`
 
+	// State Possible states of a project
+	State ProjectState `json:"state"`
+
 	// Tags Tags for the project
 	Tags map[string]string `json:"tags"`
 }
+
+// ProjectState Possible states of a project
+type ProjectState string
 
 // ProjectsPostRequest POST request for a project
 type ProjectsPostRequest struct {
 	// Name Name of the project
 	Name string `json:"name"`
 
-	// Tags Tags for the project
+	// Tags Tags for the project. Tag keys must be 1–63 characters, start and end with alphanumerics, and may include `-`, `_`, and `.`.
 	Tags *map[string]string `json:"tags,omitempty"`
 }
 
